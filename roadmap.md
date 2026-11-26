@@ -1,0 +1,3 @@
+- [x] Criar identidade visual e catálogo com fotos, pesquisa e categorias.
+- [x] Implementar carrinho e confirmação local do pedido.
+- [x] Validar cálculos, fluxo completo e telas de computador e celular.

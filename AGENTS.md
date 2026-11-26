@@ -28,3 +28,8 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Application rules
+- Keep menu prices in integer cents and pure cart operations in a browser-safe module to avoid rounding errors and allow focused tests.
+- Keep orders exclusively in React state and checkout simulated; no persistence, personal information, or external order transmission is needed for this frontend MVP.
+- Define restaurant visual styles and semantic colors in the global stylesheet; use shared Button and Dialog controls for accessible interactions.

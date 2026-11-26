@@ -20,6 +20,7 @@ import {
   Trash2,
   Utensils,
   GlassWater,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -74,6 +75,8 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: cover.url },
+      { name: "twitter:image", content: cover.url },
     ],
   }),
   component: Index,
@@ -150,7 +153,7 @@ function Index() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-7 w-7 text-muted-foreground"
+                     className="h-10 w-10 shrink-0 text-muted-foreground"
                     title={`Remover ${product.name}`}
                     aria-label={`Remover ${product.name}`}
                     onClick={() => update(product.id, -quantity)}
@@ -164,6 +167,7 @@ function Index() {
                       size="icon"
                       variant="ghost"
                       aria-label={`Diminuir ${product.name}`}
+                      title={`Diminuir ${product.name}`}
                       onClick={() => update(product.id, -1)}
                     >
                       <Minus size={12} />
@@ -173,6 +177,7 @@ function Index() {
                       size="icon"
                       variant="ghost"
                       aria-label={`Aumentar ${product.name}`}
+                      title={`Aumentar ${product.name}`}
                       onClick={() => update(product.id, 1)}
                     >
                       <Plus size={12} />
@@ -189,7 +194,9 @@ function Index() {
             <span>Total do pedido</span>
             <strong>{money(cartTotal(cart))}</strong>
           </div>
-          <p className="order-note">Só falta escolher seus favoritos.</p>
+          <p className="order-note">
+            {count === 0 ? "Só falta escolher seus favoritos." : "Confira os itens antes de confirmar."}
+          </p>
           {error && (
             <p className="empty-error" role="alert">
               Não foi possível finalizar seu pedido. Seu carrinho está vazio. Adicione pelo menos um
@@ -272,11 +279,7 @@ function Index() {
             <div className="cover-eyebrow">
               <Flame size={13} /> Na brasa, do nosso jeito
             </div>
-            <h1>
-              Seu próximo
-              <br />
-              burger favorito.
-            </h1>
+            <h1>Brasa Burger</h1>
             <p>
               Ingredientes de verdade, sabor sem atalhos.
               <br />
@@ -308,11 +311,12 @@ function Index() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5"
+                    className="h-8 w-8 shrink-0"
                     aria-label="Limpar pesquisa"
+                    title="Limpar pesquisa"
                     onClick={() => setSearch("")}
                   >
-                    <Minus />
+                    <X />
                   </Button>
                 )}
               </label>
@@ -361,7 +365,7 @@ function Index() {
                       aria-label={`Adicionar ${product.name} ao pedido`}
                     >
                       <Plus size={14} />
-                      Adicionar ao pedido
+                      Adicionar
                       {(cart[product.id] ?? 0) > 0 && <span>({cart[product.id]})</span>}
                     </Button>
                   </div>

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowRight,
@@ -9,7 +10,6 @@ import {
   Flame,
   Heart,
   LayoutGrid,
-  Leaf,
   MapPin,
   Minus,
   Plus,
@@ -30,35 +30,27 @@ import {
   cartItems,
   cartTotal,
   changeQuantity,
-  filterProducts,
   money,
   type Cart,
-  type Category,
+  type Product,
 } from "@/lib/menu";
-import classic from "@/assets/classic.webp.asset.json";
-import bacon from "@/assets/bacon.webp.asset.json";
-import chicken from "@/assets/chicken.webp.asset.json";
-import fries from "@/assets/fries.webp.asset.json";
-import onion from "@/assets/onion.webp.asset.json";
-import soda from "@/assets/soda.webp.asset.json";
-import juice from "@/assets/juice.webp.asset.json";
+import { fetchCategories, fetchProducts } from "@/lib/api";
 import cover from "@/assets/cover.webp.asset.json";
 
 const photos: Record<string, string> = {
-  classic: classic.url,
-  bacon: bacon.url,
-  chicken: chicken.url,
-  fries: fries.url,
-  onion: onion.url,
-  soda: soda.url,
-  juice: juice.url,
+  classic: "/images/products/classic.jpg",
+  bacon: "/images/products/bacon.jpg",
+  chicken: "/images/products/chicken.jpg",
+  fries: "/images/products/fries.jpg",
+  onion: "/images/products/onion.jpg",
+  soda: "/images/products/soda.jpg",
+  juice: "/images/products/juice.jpg",
 };
-const categories: { name: Category; icon: typeof Burger }[] = [
-  { name: "Todos", icon: LayoutGrid },
-  { name: "Hambúrgueres", icon: Burger },
-  { name: "Porções", icon: Utensils },
-  { name: "Bebidas", icon: GlassWater },
-];
+const categoryIcons: Record<string, typeof Burger> = {
+  hamburgueres: Burger,
+  porcoes: Utensils,
+  bebidas: GlassWater,
+};
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -82,21 +74,52 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 function Index() {
-  const [category, setCategory] = useState<Category>("Todos");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Cart>({});
   const [order, setOrder] = useState<Cart | null>(null);
   const [mobileCart, setMobileCart] = useState(false);
   const [error, setError] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const visible = filterProducts(category, search);
-  const count = cartCount(cart);
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+    retry: false,
+  });
+  const catalogQuery = useQuery({
+    queryKey: ["products", "catalog"],
+    queryFn: () => fetchProducts(),
+    retry: false,
+  });
+  const normalizedSearch = search.trim();
+  const hasFilters = categoryId !== null || normalizedSearch.length > 0;
+  const filteredProductsQuery = useQuery({
+    queryKey: ["products", "filtered", categoryId, normalizedSearch],
+    queryFn: () =>
+      fetchProducts({
+        ...(categoryId ? { categoryId } : {}),
+        ...(normalizedSearch ? { search: normalizedSearch } : {}),
+      }),
+    enabled: hasFilters,
+    retry: false,
+  });
+  const productsQuery = hasFilters ? filteredProductsQuery : catalogQuery;
+  const allProducts = catalogQuery.data ?? [];
+  const visible = productsQuery.data ?? [];
+  const productLoadError = catalogQuery.error ?? productsQuery.error;
+  const hasProductError = catalogQuery.isError || productsQuery.isError;
+  const isProductsLoading = catalogQuery.isLoading || productsQuery.isLoading;
+  const count = cartCount(cart, allProducts);
+  function retryProducts() {
+    if (catalogQuery.isError) void catalogQuery.refetch();
+    if (hasFilters && filteredProductsQuery.isError) void filteredProductsQuery.refetch();
+  }
   function update(id: string, delta: number) {
     setCart((current) => changeQuantity(current, id, delta));
     setError(false);
   }
   function checkout() {
-    if (!canCheckout(cart)) {
+    if (!canCheckout(cart, allProducts)) {
       setError(true);
       return;
     }
@@ -104,7 +127,7 @@ function Index() {
     setConfirming(true);
   }
   function confirm() {
-    if (!canCheckout(cart)) return;
+    if (!canCheckout(cart, allProducts)) return;
     setOrder({ ...cart });
     setCart({});
     setConfirming(false);
@@ -142,10 +165,10 @@ function Index() {
           </div>
         ) : (
           <div className="order-items">
-            {cartItems(cart).map(({ product, quantity, subtotal }) => (
+            {cartItems(cart, allProducts).map(({ product, quantity, subtotal }) => (
               <div className="order-item" key={product.id}>
                 <div className="order-item-top">
-                  <img src={photos[product.id]} alt={product.name} />
+                  <img src={photos[product.id] ?? product.imageUrl ?? cover.url} alt={product.name} />
                   <div className="flex-1">
                     <h3>{product.name}</h3>
                     <p>{money(product.price)} / unidade</p>
@@ -192,7 +215,7 @@ function Index() {
         <div className="order-footer">
           <div className="order-total">
             <span>Total do pedido</span>
-            <strong>{money(cartTotal(cart))}</strong>
+            <strong>{money(cartTotal(cart, allProducts))}</strong>
           </div>
           <p className="order-note">
             {count === 0 ? "Só falta escolher seus favoritos." : "Confira os itens antes de confirmar."}
@@ -217,7 +240,7 @@ function Index() {
     return (
       <>
         <div className="confirmation-items">
-          {cartItems(summary).map(({ product, quantity, subtotal }) => (
+          {cartItems(summary, allProducts).map(({ product, quantity, subtotal }) => (
             <div className="confirmation-item" key={product.id}>
               <span>
                 <strong>
@@ -231,7 +254,7 @@ function Index() {
         </div>
         <div className="order-total mt-3">
           <span>Total do pedido</span>
-          <strong>{money(cartTotal(summary))}</strong>
+          <strong>{money(cartTotal(summary, allProducts))}</strong>
         </div>
       </>
     );
@@ -322,30 +345,52 @@ function Index() {
               </label>
             </div>
             <div className="categories" aria-label="Categorias">
-              {categories.map(({ name, icon: Icon }) => (
+              <Button
+                variant="ghost"
+                className={`category-button ${categoryId === null ? "active" : ""}`}
+                aria-pressed={categoryId === null}
+                onClick={() => setCategoryId(null)}
+              >
+                <LayoutGrid size={15} />
+                Todos
+              </Button>
+              {(categoriesQuery.data ?? []).map((category) => {
+                const Icon = categoryIcons[category.id] ?? Utensils;
+                return (
                 <Button
-                  key={name}
+                  key={category.id}
                   variant="ghost"
-                  className={`category-button ${category === name ? "active" : ""}`}
-                  aria-pressed={category === name}
-                  onClick={() => setCategory(name)}
+                  className={`category-button ${categoryId === category.id ? "active" : ""}`}
+                  aria-pressed={categoryId === category.id}
+                  onClick={() => setCategoryId(category.id)}
                 >
                   <Icon size={15} />
-                  {name}
+                  {category.name}
                 </Button>
-              ))}
+                );
+              })}
             </div>
+            {categoriesQuery.isError && (
+              <p className="empty-error" role="alert">
+                Não foi possível carregar as categorias: {categoriesQuery.error.message}{" "}
+                <Button variant="ghost" onClick={() => void categoriesQuery.refetch()}>
+                  Tentar novamente
+                </Button>
+              </p>
+            )}
             <div className="product-count">
               <span>{visible.length} opções para matar sua fome</span>
-              <span className="ml-auto flex items-center gap-1">
-                <Leaf size={12} /> Ingredientes selecionados
-              </span>
             </div>
             <div className="product-grid">
-              {visible.map((product) => (
+              {!hasProductError &&
+                visible.map((product: Product) => (
                 <article className="product-card" key={product.id}>
                   <div className="product-image">
-                    <img src={photos[product.id]} alt={product.name} loading="lazy" />
+                    <img
+                      src={photos[product.id] ?? product.imageUrl ?? cover.url}
+                      alt={product.name}
+                      loading="lazy"
+                    />
                     {product.tag && (
                       <span className="product-tag">
                         <Flame size={10} className="text-primary" />
@@ -354,7 +399,7 @@ function Index() {
                     )}
                   </div>
                   <div className="product-info">
-                    <span className="product-category">{product.category}</span>
+                    <span className="product-category">{product.category.name}</span>
                     <h3>{product.name}</h3>
                     <p className="product-description">{product.description}</p>
                     <div className="product-price">{money(product.price)}</div>
@@ -372,7 +417,21 @@ function Index() {
                 </article>
               ))}
             </div>
-            {visible.length === 0 && (
+            {isProductsLoading && (
+              <div className="no-results">
+                <h3>Carregando produtos...</h3>
+              </div>
+            )}
+            {hasProductError && (
+              <div className="no-results" role="alert">
+                <h3>Não foi possível carregar o cardápio</h3>
+                <p className="mt-2 text-sm">{productLoadError?.message}</p>
+                <Button className="mt-4" variant="outline" onClick={retryProducts}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+            {!isProductsLoading && !hasProductError && visible.length === 0 && (
               <div className="no-results">
                 <Search className="mx-auto mb-3" />
                 <h3>Nenhum produto encontrado</h3>
@@ -406,7 +465,7 @@ function Index() {
             Ver meu pedido ({count})
           </span>
           <span>
-            {money(cartTotal(cart))} <ArrowRight className="ml-2 inline" />
+            {money(cartTotal(cart, allProducts))} <ArrowRight className="ml-2 inline" />
           </span>
         </Button>
       </div>

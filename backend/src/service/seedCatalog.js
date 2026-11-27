@@ -14,7 +14,7 @@ const products = [
         description: 'Pão brioche, hambúrguer artesanal, queijo, alface, tomate e molho da casa.',
         price: 2590,
         categoryId: 'hamburgueres',
-        imageUrl: null,
+        imageUrl: '/images/products/classic.jpg',
         tag: 'O favorito',
         displayOrder: 1
     },
@@ -24,7 +24,7 @@ const products = [
         description: 'Hambúrguer artesanal, cheddar cremoso, bacon crocante e molho especial.',
         price: 2990,
         categoryId: 'hamburgueres',
-        imageUrl: null,
+        imageUrl: '/images/products/bacon.jpg',
         tag: 'Mais pedido',
         displayOrder: 2
     },
@@ -34,7 +34,7 @@ const products = [
         description: 'Frango empanado crocante, alface fresquinha e maionese da casa.',
         price: 2490,
         categoryId: 'hamburgueres',
-        imageUrl: null,
+        imageUrl: '/images/products/chicken.jpg',
         tag: null,
         displayOrder: 3
     },
@@ -44,7 +44,7 @@ const products = [
         description: 'Douradas por fora, macias por dentro. Uma porção feita para compartilhar.',
         price: 1500,
         categoryId: 'porcoes',
-        imageUrl: null,
+        imageUrl: '/images/products/fries.jpg',
         tag: null,
         displayOrder: 4
     },
@@ -54,7 +54,7 @@ const products = [
         description: 'Anéis de cebola empanados e crocantes, acompanhados de molho da casa.',
         price: 1800,
         categoryId: 'porcoes',
-        imageUrl: null,
+        imageUrl: '/images/products/onion.jpg',
         tag: null,
         displayOrder: 5
     },
@@ -64,7 +64,7 @@ const products = [
         description: 'Refrigerante em lata de 350 ml, servido bem gelado.',
         price: 700,
         categoryId: 'bebidas',
-        imageUrl: null,
+        imageUrl: '/images/products/soda.jpg',
         tag: null,
         displayOrder: 6
     },
@@ -74,7 +74,7 @@ const products = [
         description: 'Suco de laranja natural, fresquinho e preparado na hora.',
         price: 900,
         categoryId: 'bebidas',
-        imageUrl: null,
+        imageUrl: '/images/products/juice.jpg',
         tag: null,
         displayOrder: 7
     }
@@ -85,6 +85,7 @@ export default async function seedCatalog() {
         await Categoria.findOrCreate({ where: { id: category.id }, defaults: category })
     }
     for (const product of products) {
-        await Produto.findOrCreate({ where: { id: product.id }, defaults: product })
+        const [record] = await Produto.findOrCreate({ where: { id: product.id }, defaults: product })
+        await record.update({ imageUrl: product.imageUrl })
     }
 }

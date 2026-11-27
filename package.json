@@ -4,14 +4,17 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "preview": "vite preview",
-    "lint": "eslint .",
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build",
+    "build:dev": "npm --prefix frontend run build:dev",
+    "preview": "npm --prefix frontend run preview",
+    "lint": "npm --prefix frontend run lint",
     "format": "prettier --write .",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "npm --prefix frontend run test",
+    "test:watch": "npm --prefix frontend run test:watch",
+    "test:backend": "npm --prefix backend run test"
   },
   "overrides": {
     "rolldown": "1.2.1",

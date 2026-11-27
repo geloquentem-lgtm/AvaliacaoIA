@@ -1,24 +1,42 @@
 # Screenshot Exact Match
 
-Implement exactly the screenshot and nothing else
+This project was built with [Lovable](https://lovable.dev) and remains linked
+to the [Lovable editor](https://lovable.dev/projects/0272b45d-f439-4f29-8382-5e2714843aa2).
 
-This project was built with [Lovable](https://lovable.dev).
+The canonical application copies live in `frontend/` and `backend/`. The
+original root-level frontend files remain untouched as a compatibility
+snapshot; `documentos/` and `prompts/` remain at the repository root. Make
+front-end code changes in `frontend/`; root npm scripts delegate to that copy.
 
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/0272b45d-f439-4f29-8382-5e2714843aa2).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Front-end
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+npm --prefix frontend install
+npm run dev:frontend
+```
+
+Set `VITE_API_BASE_URL` in `frontend/.env` to the API base URL. The example
+value is `http://localhost:3000/api/v1`.
+
+## Back-end
+
+Copy `backend/.env.example` to `backend/.env`, fill in the PostgreSQL settings,
+and set `FRONTEND_ORIGINS` to the front-end origin(s). Then run:
+
+```sh
+npm --prefix backend ci
+npm run dev:backend
+```
+
+The public catalog endpoints are `GET /api/v1/categories`,
+`GET /api/v1/products`, and `GET /api/v1/products/:id`. The cart and simulated
+checkout remain in front-end state; no order endpoint is implemented.
+
+## Validation
+
+```sh
+npm test
+npm run lint
+npm run build
+npm run test:backend
 ```

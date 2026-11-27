@@ -1,0 +1,6 @@
+- [x] Criar identidade visual e catálogo com fotos, pesquisa e categorias.
+- [x] Implementar carrinho e confirmação local do pedido.
+- [x] Validar cálculos, fluxo completo e telas de computador e celular.
+- [x] Ajustar legibilidade, controles e distribuição conforme os critérios visuais enviados.
+- [x] Verificar filtros, carrinho, confirmação e ausência de rolagem horizontal em diferentes resoluções.
+- [x] Testar adição, aumento e diminuição de quantidades, remoção, cálculos e bloqueio do carrinho vazio.
